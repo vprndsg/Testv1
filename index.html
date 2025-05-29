@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Rainy Noir Detective</title>
+  <title>Noir Detective 3D</title>
   <style>
-    body, html {
+    html, body {
       margin: 0;
       padding: 0;
       overflow: hidden;
@@ -17,6 +17,8 @@
     }
     canvas {
       display: block;
+      width: 100%;
+      height: 100%;
     }
   </style>
 </head>
@@ -26,129 +28,30 @@
     const canvas = document.getElementById('scene');
     const ctx = canvas.getContext('2d');
 
-    // Detective drawing info
-    const detective = {
-      baseX: 0,
-      baseY: 0,
-      bodyHeight: 0,
-      hatWidth: 70
-    };
-
-    const highlights = [];
-    const rain = [];
-    const rainCount = 200;
-
     function resize() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      // Position detective centered near the bottom, proportional body
-      detective.baseX = canvas.width / 2;
-      detective.baseY = canvas.height * 0.9;
-      detective.bodyHeight = canvas.height * 0.6;
     }
-    window.addEventListener('resize', resize);
+    window.addEventListener('resize', () => {
+      resize();
+      initRain();
+    });
     resize();
 
-    function createRain() {
+    const rain = [];
+    const dropCount = 200;
+    function initRain() {
       rain.length = 0;
-      for (let i = 0; i < rainCount; i++) {
+      for (let i = 0; i < dropCount; i++) {
         rain.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
           speed: 4 + Math.random() * 4,
-          length: 10 + Math.random() * 10
+          len: 10 + Math.random() * 10
         });
       }
     }
-
-    function drawStreetLight() {
-      const poleX = canvas.width / 2;
-      const poleY = canvas.height * 0.2;
-      const poleHeight = canvas.height * 0.6;
-      const lightRadius = 150;
-
-      // Light glow
-      const gradient = ctx.createRadialGradient(poleX, poleY, 0, poleX, poleY, lightRadius);
-      gradient.addColorStop(0, 'rgba(255,255,200,0.8)');
-      gradient.addColorStop(1, 'rgba(255,255,200,0)');
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(poleX, poleY, lightRadius, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Pole
-      ctx.strokeStyle = '#666';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(poleX, poleY);
-      ctx.lineTo(poleX, poleY + poleHeight);
-      ctx.stroke();
-
-      // Lamp
-      ctx.fillStyle = '#ffffaa';
-      ctx.beginPath();
-      ctx.arc(poleX, poleY, 10, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    function drawDetective() {
-      const baseX = detective.baseX;
-      const baseY = detective.baseY;
-      const bodyTop = baseY - detective.bodyHeight;
-
-      ctx.strokeStyle = '#555';
-      ctx.fillStyle = '#222';
-      ctx.lineWidth = 2;
-
-      // Coat (trench)
-      ctx.beginPath();
-      ctx.moveTo(baseX - 40, baseY);
-      ctx.lineTo(baseX + 40, baseY);
-      ctx.lineTo(baseX + 20, bodyTop + 40);
-      ctx.lineTo(baseX - 20, bodyTop + 40);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-
-      // Head
-      const headY = bodyTop + 20;
-      ctx.beginPath();
-      ctx.arc(baseX, headY - 20, 20, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      // Hat brim
-      ctx.beginPath();
-      ctx.moveTo(baseX - detective.hatWidth / 2, headY - 30);
-      ctx.lineTo(baseX + detective.hatWidth / 2, headY - 30);
-      ctx.stroke();
-
-      // Hat top
-      ctx.beginPath();
-      ctx.rect(baseX - 22, headY - 55, 44, 25);
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    function updateRain() {
-      const hatY = detective.baseY - detective.bodyHeight - 25;
-      const hatLeft = detective.baseX - detective.hatWidth / 2;
-      const hatRight = detective.baseX + detective.hatWidth / 2;
-      for (const drop of rain) {
-        drop.y += drop.speed;
-        // Highlight rain hitting the hat
-        if (drop.y > hatY && drop.y < hatY + 4 && drop.x > hatLeft && drop.x < hatRight) {
-          highlights.push({ x: drop.x, y: hatY, alpha: 1 });
-          drop.y = -drop.length;
-          drop.x = Math.random() * canvas.width;
-          continue;
-        }
-        if (drop.y > canvas.height) {
-          drop.y = -drop.length;
-          drop.x = Math.random() * canvas.width;
-        }
-      }
-    }
+    initRain();
 
     function drawRain() {
       ctx.strokeStyle = 'rgba(180,180,255,0.5)';
@@ -156,46 +59,76 @@
       ctx.beginPath();
       for (const drop of rain) {
         ctx.moveTo(drop.x, drop.y);
-        ctx.lineTo(drop.x, drop.y + drop.length);
+        ctx.lineTo(drop.x, drop.y + drop.len);
+        drop.y += drop.speed;
+        if (drop.y > canvas.height) {
+          drop.y = -drop.len;
+          drop.x = Math.random() * canvas.width;
+        }
       }
       ctx.stroke();
     }
 
-    function drawHighlights() {
-      for (const h of highlights) {
-        ctx.strokeStyle = `rgba(255,255,255,${h.alpha})`;
-        ctx.beginPath();
-        ctx.moveTo(h.x - 3, h.y);
-        ctx.lineTo(h.x + 3, h.y - 6);
-        ctx.stroke();
-        h.alpha -= 0.05;
-      }
-      // Remove faded highlights
-      for (let i = highlights.length - 1; i >= 0; i--) {
-        if (highlights[i].alpha <= 0) highlights.splice(i, 1);
-      }
+    function drawDetective() {
+      const centerX = canvas.width / 2;
+      const groundY = canvas.height * 0.9;
+      const bodyHeight = canvas.height * 0.6;
+      const headR = 20;
+      const headY = groundY - bodyHeight + headR;
+      const hatWidth = 80;
+      const hatDepth = 25;
+
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#555';
+
+      // Coat
+      ctx.fillStyle = '#222';
+      ctx.beginPath();
+      ctx.moveTo(centerX - 40, groundY);
+      ctx.lineTo(centerX + 40, groundY);
+      ctx.lineTo(centerX + 20, groundY - bodyHeight + 40);
+      ctx.lineTo(centerX - 20, groundY - bodyHeight + 40);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Head with radial gradient for 3D effect
+      const faceGrad = ctx.createRadialGradient(centerX - 10, headY - 10, 5, centerX, headY, headR);
+      faceGrad.addColorStop(0, '#444');
+      faceGrad.addColorStop(1, '#111');
+      ctx.fillStyle = faceGrad;
+      ctx.beginPath();
+      ctx.arc(centerX, headY, headR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Hat brim - ellipse for perspective
+      ctx.fillStyle = '#222';
+      ctx.beginPath();
+      ctx.ellipse(centerX, headY - headR - 5, hatWidth / 2, hatDepth / 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Hat top with gradient to add dimension
+      const topH = 30;
+      const hatGrad = ctx.createLinearGradient(centerX, headY - headR - topH, centerX, headY - headR);
+      hatGrad.addColorStop(0, '#333');
+      hatGrad.addColorStop(1, '#111');
+      ctx.fillStyle = hatGrad;
+      ctx.beginPath();
+      ctx.rect(centerX - hatWidth / 4, headY - headR - topH, hatWidth / 2, topH);
+      ctx.fill();
+      ctx.stroke();
     }
 
     function loop() {
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      drawStreetLight();
       drawDetective();
-      drawHighlights();
       drawRain();
-      updateRain();
       requestAnimationFrame(loop);
     }
-
-    createRain();
     loop();
-
-    // Rebuild rain on resize so edge cases don't appear
-    window.addEventListener('resize', () => {
-      resize();
-      createRain();
-    });
-
   </script>
 </body>
 </html>
