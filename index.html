@@ -1,1 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rainy Noir Detective</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #000;
+      color: #fff;
+      height: 100%;
+      width: 100%;
+      font-family: Arial, sans-serif;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+  <script>
+const canvas = document.getElementById('scene');
+const ctx = canvas.getContext('2d');
 
+// Positioning information for the detective figure
+const detective = {
+  baseX: 0,
+  baseY: 0,
+  bodyHeight: 0,
+  hatWidth: 70
+};
+
+const highlights = [];
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  // Adjust detective position based on canvas size
+  detective.baseX = canvas.width / 2;
+  detective.baseY = canvas.height * 0.9;
+  detective.bodyHeight = canvas.height * 0.6;
+}
+    window.addEventListener('resize', resize);
+    resize();
+
+    const rain = [];
+    const rainCount = 200;
+
+    function createRain() {
+      for (let i = 0; i < rainCount; i++) {
+        rain.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          speed: 4 + Math.random() * 4,
+          length: 10 + Math.random() * 10
+        });
+      }
+    }
+
+    function drawStreetLight() {
+      const poleX = canvas.width / 2;
+      const poleY = canvas.height * 0.2;
+      const poleHeight = canvas.height * 0.6;
+      const lightRadius = 150;
+
+      const gradient = ctx.createRadialGradient(poleX, poleY, 0, poleX, poleY, lightRadius);
+      gradient.addColorStop(0, 'rgba(255,255,200,0.5)');
+      gradient.addColorStop(1, 'rgba(255,255,200,0)');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(poleX, poleY, lightRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#666';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(poleX, poleY);
+      ctx.lineTo(poleX, poleY + poleHeight);
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffaa';
+      ctx.beginPath();
+      ctx.arc(poleX, poleY, 10, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawDetective() {
+      const baseX = detective.baseX;
+      const baseY = detective.baseY;
+      const bodyTop = baseY - detective.bodyHeight;
+
+      ctx.strokeStyle = '#555';
+      ctx.fillStyle = '#222';
+      ctx.lineWidth = 2;
+
+      // Coat
+      ctx.beginPath();
+      ctx.moveTo(baseX - 40, baseY);
+      ctx.lineTo(baseX + 40, baseY);
+      ctx.lineTo(baseX + 20, bodyTop + 40);
+      ctx.lineTo(baseX - 20, bodyTop + 40);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Head
+      const headY = bodyTop + 20;
+      ctx.beginPath();
+      ctx.arc(baseX, headY - 20, 20, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Hat brim
+      ctx.beginPath();
+      ctx.moveTo(baseX - detective.hatWidth / 2, headY - 30);
+      ctx.lineTo(baseX + detective.hatWidth / 2, headY - 30);
+      ctx.stroke();
+
+      // Hat top
+      ctx.beginPath();
+      ctx.rect(baseX - 22, headY - 55, 44, 25);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    function updateRain() {
+      const hatY = detective.baseY - detective.bodyHeight - 25;
+      const hatLeft = detective.baseX - detective.hatWidth / 2;
+      const hatRight = detective.baseX + detective.hatWidth / 2;
+      for (const drop of rain) {
+        drop.y += drop.speed;
+        if (drop.y > hatY && drop.y < hatY + 4 && drop.x > hatLeft && drop.x < hatRight) {
+          highlights.push({ x: drop.x, y: hatY, alpha: 1 });
+          drop.y = -drop.length;
+          drop.x = Math.random() * canvas.width;
+          continue;
+        }
+        if (drop.y > canvas.height) {
+          drop.y = -drop.length;
+          drop.x = Math.random() * canvas.width;
+        }
+      }
+    }
+
+    function drawRain() {
+      ctx.strokeStyle = 'rgba(180,180,255,0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (const drop of rain) {
+        ctx.moveTo(drop.x, drop.y);
+        ctx.lineTo(drop.x, drop.y + drop.length);
+      }
+      ctx.stroke();
+    }
+
+    function drawHighlights() {
+      for (const h of highlights) {
+        ctx.strokeStyle = `rgba(255,255,255,${h.alpha})`;
+        ctx.beginPath();
+        ctx.moveTo(h.x - 3, h.y);
+        ctx.lineTo(h.x + 3, h.y - 6);
+        ctx.stroke();
+        h.alpha -= 0.05;
+      }
+      // Remove faded highlights
+      for (let i = highlights.length - 1; i >= 0; i--) {
+        if (highlights[i].alpha <= 0) highlights.splice(i, 1);
+      }
+    }
+
+    function loop() {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawStreetLight();
+      drawDetective();
+      drawHighlights();
+      drawRain();
+      updateRain();
+      requestAnimationFrame(loop);
+    }
+
+    createRain();
+    loop();
+  </script>
+</body>
+</html>
