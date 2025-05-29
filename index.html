@@ -23,34 +23,34 @@
 <body>
   <canvas id="scene"></canvas>
   <script>
-const canvas = document.getElementById('scene');
-const ctx = canvas.getContext('2d');
+    const canvas = document.getElementById('scene');
+    const ctx = canvas.getContext('2d');
 
-// Positioning information for the detective figure
-const detective = {
-  baseX: 0,
-  baseY: 0,
-  bodyHeight: 0,
-  hatWidth: 70
-};
+    // Detective drawing info
+    const detective = {
+      baseX: 0,
+      baseY: 0,
+      bodyHeight: 0,
+      hatWidth: 70
+    };
 
-const highlights = [];
-
-function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  // Adjust detective position based on canvas size
-  detective.baseX = canvas.width / 2;
-  detective.baseY = canvas.height * 0.9;
-  detective.bodyHeight = canvas.height * 0.6;
-}
-    window.addEventListener('resize', resize);
-    resize();
-
+    const highlights = [];
     const rain = [];
     const rainCount = 200;
 
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      // Position detective centered near the bottom, proportional body
+      detective.baseX = canvas.width / 2;
+      detective.baseY = canvas.height * 0.9;
+      detective.bodyHeight = canvas.height * 0.6;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
     function createRain() {
+      rain.length = 0;
       for (let i = 0; i < rainCount; i++) {
         rain.push({
           x: Math.random() * canvas.width,
@@ -67,14 +67,16 @@ function resize() {
       const poleHeight = canvas.height * 0.6;
       const lightRadius = 150;
 
+      // Light glow
       const gradient = ctx.createRadialGradient(poleX, poleY, 0, poleX, poleY, lightRadius);
-      gradient.addColorStop(0, 'rgba(255,255,200,0.5)');
+      gradient.addColorStop(0, 'rgba(255,255,200,0.8)');
       gradient.addColorStop(1, 'rgba(255,255,200,0)');
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(poleX, poleY, lightRadius, 0, Math.PI * 2);
       ctx.fill();
 
+      // Pole
       ctx.strokeStyle = '#666';
       ctx.lineWidth = 4;
       ctx.beginPath();
@@ -82,6 +84,7 @@ function resize() {
       ctx.lineTo(poleX, poleY + poleHeight);
       ctx.stroke();
 
+      // Lamp
       ctx.fillStyle = '#ffffaa';
       ctx.beginPath();
       ctx.arc(poleX, poleY, 10, 0, Math.PI * 2);
@@ -97,7 +100,7 @@ function resize() {
       ctx.fillStyle = '#222';
       ctx.lineWidth = 2;
 
-      // Coat
+      // Coat (trench)
       ctx.beginPath();
       ctx.moveTo(baseX - 40, baseY);
       ctx.lineTo(baseX + 40, baseY);
@@ -133,6 +136,7 @@ function resize() {
       const hatRight = detective.baseX + detective.hatWidth / 2;
       for (const drop of rain) {
         drop.y += drop.speed;
+        // Highlight rain hitting the hat
         if (drop.y > hatY && drop.y < hatY + 4 && drop.x > hatLeft && drop.x < hatRight) {
           highlights.push({ x: drop.x, y: hatY, alpha: 1 });
           drop.y = -drop.length;
@@ -185,6 +189,13 @@ function resize() {
 
     createRain();
     loop();
+
+    // Rebuild rain on resize so edge cases don't appear
+    window.addEventListener('resize', () => {
+      resize();
+      createRain();
+    });
+
   </script>
 </body>
 </html>
