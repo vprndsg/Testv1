@@ -1,1 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rainy Noir Detective</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #000;
+      color: #fff;
+      height: 100%;
+      width: 100%;
+      font-family: Arial, sans-serif;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+  <script>
+    const canvas = document.getElementById('scene');
+    const ctx = canvas.getContext('2d');
 
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const rain = [];
+    const rainCount = 200;
+
+    function createRain() {
+      for (let i = 0; i < rainCount; i++) {
+        rain.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          speed: 4 + Math.random() * 4,
+          length: 10 + Math.random() * 10
+        });
+      }
+    }
+
+    function drawStreetLight() {
+      const poleX = canvas.width / 2;
+      const poleY = canvas.height * 0.2;
+      const poleHeight = canvas.height * 0.6;
+      const lightRadius = 150;
+
+      const gradient = ctx.createRadialGradient(poleX, poleY, 0, poleX, poleY, lightRadius);
+      gradient.addColorStop(0, 'rgba(255,255,200,0.8)');
+      gradient.addColorStop(1, 'rgba(255,255,200,0)');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(poleX, poleY, lightRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#666';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(poleX, poleY);
+      ctx.lineTo(poleX, poleY + poleHeight);
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffaa';
+      ctx.beginPath();
+      ctx.arc(poleX, poleY, 10, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawDetective() {
+      const baseX = canvas.width / 2;
+      const baseY = canvas.height * 0.8;
+      ctx.strokeStyle = '#aaa';
+      ctx.fillStyle = '#333';
+      ctx.lineWidth = 2;
+
+      ctx.beginPath();
+      ctx.moveTo(baseX - 20, baseY);
+      ctx.lineTo(baseX, baseY - 60);
+      ctx.lineTo(baseX + 20, baseY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(baseX, baseY - 70, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(baseX - 25, baseY - 80);
+      ctx.lineTo(baseX + 25, baseY - 80);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.rect(baseX - 15, baseY - 110, 30, 30);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    function updateRain() {
+      for (const drop of rain) {
+        drop.y += drop.speed;
+        if (drop.y > canvas.height) {
+          drop.y = -drop.length;
+          drop.x = Math.random() * canvas.width;
+        }
+      }
+    }
+
+    function drawRain() {
+      ctx.strokeStyle = 'rgba(180,180,255,0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (const drop of rain) {
+        ctx.moveTo(drop.x, drop.y);
+        ctx.lineTo(drop.x, drop.y + drop.length);
+      }
+      ctx.stroke();
+    }
+
+    function loop() {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawStreetLight();
+      drawDetective();
+      drawRain();
+      updateRain();
+      requestAnimationFrame(loop);
+    }
+
+    createRain();
+    loop();
+  </script>
+</body>
+</html>
