@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Rainy Noir Detective</title>
   <style>
     body, html {
@@ -25,17 +26,31 @@
     const canvas = document.getElementById('scene');
     const ctx = canvas.getContext('2d');
 
+    // Detective drawing info
+    const detective = {
+      baseX: 0,
+      baseY: 0,
+      bodyHeight: 0,
+      hatWidth: 70
+    };
+
+    const highlights = [];
+    const rain = [];
+    const rainCount = 200;
+
     function resize() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      // Position detective centered near the bottom, proportional body
+      detective.baseX = canvas.width / 2;
+      detective.baseY = canvas.height * 0.9;
+      detective.bodyHeight = canvas.height * 0.6;
     }
     window.addEventListener('resize', resize);
     resize();
 
-    const rain = [];
-    const rainCount = 200;
-
     function createRain() {
+      rain.length = 0;
       for (let i = 0; i < rainCount; i++) {
         rain.push({
           x: Math.random() * canvas.width,
@@ -52,6 +67,7 @@
       const poleHeight = canvas.height * 0.6;
       const lightRadius = 150;
 
+      // Light glow
       const gradient = ctx.createRadialGradient(poleX, poleY, 0, poleX, poleY, lightRadius);
       gradient.addColorStop(0, 'rgba(255,255,200,0.8)');
       gradient.addColorStop(1, 'rgba(255,255,200,0)');
@@ -60,6 +76,7 @@
       ctx.arc(poleX, poleY, lightRadius, 0, Math.PI * 2);
       ctx.fill();
 
+      // Pole
       ctx.strokeStyle = '#666';
       ctx.lineWidth = 4;
       ctx.beginPath();
@@ -67,6 +84,7 @@
       ctx.lineTo(poleX, poleY + poleHeight);
       ctx.stroke();
 
+      // Lamp
       ctx.fillStyle = '#ffffaa';
       ctx.beginPath();
       ctx.arc(poleX, poleY, 10, 0, Math.PI * 2);
@@ -74,39 +92,57 @@
     }
 
     function drawDetective() {
-      const baseX = canvas.width / 2;
-      const baseY = canvas.height * 0.8;
-      ctx.strokeStyle = '#aaa';
-      ctx.fillStyle = '#333';
+      const baseX = detective.baseX;
+      const baseY = detective.baseY;
+      const bodyTop = baseY - detective.bodyHeight;
+
+      ctx.strokeStyle = '#555';
+      ctx.fillStyle = '#222';
       ctx.lineWidth = 2;
 
+      // Coat (trench)
       ctx.beginPath();
-      ctx.moveTo(baseX - 20, baseY);
-      ctx.lineTo(baseX, baseY - 60);
-      ctx.lineTo(baseX + 20, baseY);
+      ctx.moveTo(baseX - 40, baseY);
+      ctx.lineTo(baseX + 40, baseY);
+      ctx.lineTo(baseX + 20, bodyTop + 40);
+      ctx.lineTo(baseX - 20, bodyTop + 40);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
 
+      // Head
+      const headY = bodyTop + 20;
       ctx.beginPath();
-      ctx.arc(baseX, baseY - 70, 12, 0, Math.PI * 2);
+      ctx.arc(baseX, headY - 20, 20, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
+      // Hat brim
       ctx.beginPath();
-      ctx.moveTo(baseX - 25, baseY - 80);
-      ctx.lineTo(baseX + 25, baseY - 80);
+      ctx.moveTo(baseX - detective.hatWidth / 2, headY - 30);
+      ctx.lineTo(baseX + detective.hatWidth / 2, headY - 30);
       ctx.stroke();
 
+      // Hat top
       ctx.beginPath();
-      ctx.rect(baseX - 15, baseY - 110, 30, 30);
+      ctx.rect(baseX - 22, headY - 55, 44, 25);
       ctx.fill();
       ctx.stroke();
     }
 
     function updateRain() {
+      const hatY = detective.baseY - detective.bodyHeight - 25;
+      const hatLeft = detective.baseX - detective.hatWidth / 2;
+      const hatRight = detective.baseX + detective.hatWidth / 2;
       for (const drop of rain) {
         drop.y += drop.speed;
+        // Highlight rain hitting the hat
+        if (drop.y > hatY && drop.y < hatY + 4 && drop.x > hatLeft && drop.x < hatRight) {
+          highlights.push({ x: drop.x, y: hatY, alpha: 1 });
+          drop.y = -drop.length;
+          drop.x = Math.random() * canvas.width;
+          continue;
+        }
         if (drop.y > canvas.height) {
           drop.y = -drop.length;
           drop.x = Math.random() * canvas.width;
@@ -125,11 +161,27 @@
       ctx.stroke();
     }
 
+    function drawHighlights() {
+      for (const h of highlights) {
+        ctx.strokeStyle = `rgba(255,255,255,${h.alpha})`;
+        ctx.beginPath();
+        ctx.moveTo(h.x - 3, h.y);
+        ctx.lineTo(h.x + 3, h.y - 6);
+        ctx.stroke();
+        h.alpha -= 0.05;
+      }
+      // Remove faded highlights
+      for (let i = highlights.length - 1; i >= 0; i--) {
+        if (highlights[i].alpha <= 0) highlights.splice(i, 1);
+      }
+    }
+
     function loop() {
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       drawStreetLight();
       drawDetective();
+      drawHighlights();
       drawRain();
       updateRain();
       requestAnimationFrame(loop);
@@ -137,6 +189,13 @@
 
     createRain();
     loop();
+
+    // Rebuild rain on resize so edge cases don't appear
+    window.addEventListener('resize', () => {
+      resize();
+      createRain();
+    });
+
   </script>
 </body>
 </html>
