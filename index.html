@@ -33,7 +33,8 @@
       position: relative;
       overflow: hidden;
       animation: morph 4s ease-in-out infinite alternate,
-                 hue 5s linear infinite;
+                 hue 5s linear infinite,
+                 float 6s ease-in-out infinite;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -109,6 +110,14 @@
     @keyframes bgHue {
       0% { filter: hue-rotate(0deg) saturate(1); }
       100% { filter: hue-rotate(360deg) saturate(1.5); }
+    }
+
+    @keyframes float {
+      0%   { top: 0; left: 0; }
+      25%  { top: -6%; left: 3%; }
+      50%  { top: 6%; left: -2%; }
+      75%  { top: -4%; left: -3%; }
+      100% { top: 0; left: 0; }
     }
   </style>
 </head>
