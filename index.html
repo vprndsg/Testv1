@@ -2,133 +2,205 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Noir Detective 3D</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>Psychedelic Simon</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      overflow: hidden;
+      height: 100%;
       background: #000;
-      color: #fff;
-      height: 100%;
-      width: 100%;
-      font-family: Arial, sans-serif;
+      overflow: hidden;
+      font-family: Arial, Helvetica, sans-serif;
     }
-    canvas {
-      display: block;
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #game {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+    }
+    .pad {
+      margin: 2vw;
+      background: #ff0080;
+      border-radius: 50%;
+      position: relative;
+      overflow: hidden;
+      animation: morph 6s ease-in-out infinite, hue 10s linear infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+    }
+    .pad::before {
+      content: "";
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), rgba(255,255,255,0) 70%);
+      animation: move 8s linear infinite;
+    }
+    .pad.active {
+      box-shadow: 0 0 40px rgba(255,255,255,0.7);
+      transform: scale(1.1);
+      filter: brightness(1.5);
+    }
+    @keyframes morph {
+      0% {
+        border-radius: 60% 40% 55% 45% / 60% 55% 45% 40%;
+      }
+      50% {
+        border-radius: 40% 60% 45% 55% / 45% 40% 60% 55%;
+      }
+      100% {
+        border-radius: 60% 40% 55% 45% / 60% 55% 45% 40%;
+      }
+    }
+    @keyframes hue {
+      from { filter: hue-rotate(0deg); }
+      to { filter: hue-rotate(360deg); }
+    }
+    @keyframes move {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      font-size: 5vw;
+      z-index: 10;
+    }
+    #overlay button {
+      margin-top: 2vh;
+      padding: 1vh 2vh;
+      font-size: 4vw;
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: radial-gradient(circle at top left, #ff00cc, #333);
+      animation: bgHue 20s linear infinite alternate;
+      z-index: -1;
+    }
+    @keyframes bgHue {
+      0% { filter: hue-rotate(0deg); }
+      100% { filter: hue-rotate(360deg); }
     }
   </style>
 </head>
 <body>
-  <canvas id="scene"></canvas>
+  <div id="game">
+    <div class="pad" data-pad="0" style="background:#ff0066;"></div>
+    <div class="pad" data-pad="1" style="background:#00c3ff;"></div>
+    <div class="pad" data-pad="2" style="background:#ffee00;"></div>
+    <div class="pad" data-pad="3" style="background:#00ff99;"></div>
+    <div id="overlay"><div>Tap to Start</div><button id="start">Start</button></div>
+  </div>
   <script>
-    const canvas = document.getElementById('scene');
-    const ctx = canvas.getContext('2d');
+    const pads = document.querySelectorAll('.pad');
+    const overlay = document.getElementById('overlay');
+    const startBtn = document.getElementById('start');
+    let sequence = [];
+    let playerIndex = 0;
+    let playing = false;
+    let ctx;
 
-    function resize() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+    const freqs = [261.6, 329.6, 392.0, 523.3];
+
+    function playTone(index) {
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freqs[index];
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + 0.01);
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+      osc.stop(ctx.currentTime + 0.55);
     }
-    window.addEventListener('resize', () => {
-      resize();
-      initRain();
-    });
-    resize();
 
-    const rain = [];
-    const dropCount = 200;
-    function initRain() {
-      rain.length = 0;
-      for (let i = 0; i < dropCount; i++) {
-        rain.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          speed: 4 + Math.random() * 4,
-          len: 10 + Math.random() * 10
-        });
+    function flashPad(index) {
+      const pad = pads[index];
+      pad.classList.add('active');
+      playTone(index);
+      setTimeout(() => pad.classList.remove('active'), 500);
+    }
+
+    async function showSequence() {
+      playing = true;
+      let delay = Math.max(600 - sequence.length * 20, 200);
+      for (const index of sequence) {
+        await new Promise(res => setTimeout(res, delay));
+        flashPad(index);
+        await new Promise(res => setTimeout(res, 300));
       }
+      playing = false;
     }
-    initRain();
 
-    function drawRain() {
-      ctx.strokeStyle = 'rgba(180,180,255,0.5)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      for (const drop of rain) {
-        ctx.moveTo(drop.x, drop.y);
-        ctx.lineTo(drop.x, drop.y + drop.len);
-        drop.y += drop.speed;
-        if (drop.y > canvas.height) {
-          drop.y = -drop.len;
-          drop.x = Math.random() * canvas.width;
+    function nextRound() {
+      sequence.push(Math.floor(Math.random() * 4));
+      playerIndex = 0;
+      showSequence();
+    }
+
+    function endGame() {
+      overlay.innerHTML = `<div>Game Over<br>Score: ${sequence.length - 1}</div><button id="start">Restart</button>`;
+      overlay.style.display = 'flex';
+      sequence = [];
+    }
+
+    function startGame() {
+      if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+      overlay.style.display = 'none';
+      sequence = [];
+      nextRound();
+    }
+
+    pads.forEach(pad => {
+      pad.addEventListener('pointerdown', e => {
+        if (playing || overlay.style.display !== 'none') return;
+        const idx = parseInt(pad.dataset.pad, 10);
+        flashPad(idx);
+        if (idx === sequence[playerIndex]) {
+          playerIndex++;
+          if (playerIndex === sequence.length) {
+            setTimeout(nextRound, 600);
+          }
+        } else {
+          endGame();
         }
-      }
-      ctx.stroke();
-    }
+      });
+    });
 
-    function drawDetective() {
-      const centerX = canvas.width / 2;
-      const groundY = canvas.height * 0.9;
-      const bodyHeight = canvas.height * 0.6;
-      const headR = 20;
-      const headY = groundY - bodyHeight + headR;
-      const hatWidth = 80;
-      const hatDepth = 25;
-
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = '#555';
-
-      // Coat
-      ctx.fillStyle = '#222';
-      ctx.beginPath();
-      ctx.moveTo(centerX - 40, groundY);
-      ctx.lineTo(centerX + 40, groundY);
-      ctx.lineTo(centerX + 20, groundY - bodyHeight + 40);
-      ctx.lineTo(centerX - 20, groundY - bodyHeight + 40);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-
-      // Head with radial gradient for 3D effect
-      const faceGrad = ctx.createRadialGradient(centerX - 10, headY - 10, 5, centerX, headY, headR);
-      faceGrad.addColorStop(0, '#444');
-      faceGrad.addColorStop(1, '#111');
-      ctx.fillStyle = faceGrad;
-      ctx.beginPath();
-      ctx.arc(centerX, headY, headR, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      // Hat brim - ellipse for perspective
-      ctx.fillStyle = '#222';
-      ctx.beginPath();
-      ctx.ellipse(centerX, headY - headR - 5, hatWidth / 2, hatDepth / 2, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      // Hat top with gradient to add dimension
-      const topH = 30;
-      const hatGrad = ctx.createLinearGradient(centerX, headY - headR - topH, centerX, headY - headR);
-      hatGrad.addColorStop(0, '#333');
-      hatGrad.addColorStop(1, '#111');
-      ctx.fillStyle = hatGrad;
-      ctx.beginPath();
-      ctx.rect(centerX - hatWidth / 4, headY - headR - topH, hatWidth / 2, topH);
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    function loop() {
-      ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      drawDetective();
-      drawRain();
-      requestAnimationFrame(loop);
-    }
-    loop();
+    overlay.addEventListener('click', e => {
+      if (e.target.id === 'start') startGame();
+    });
   </script>
 </body>
 </html>

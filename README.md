@@ -1,8 +1,9 @@
-# Noir Detective Rain Animation
+# Psychedelic Simon Says
 
-This project contains a single `index.html` file with a canvas animation of a noir-style detective standing under a street light while rain falls dramatically. You can view it two ways:
+This project hosts a mobile-optimized "Simon Says" game with a psychedelic twist. The entire screen is a dynamic play board featuring four morphing lava-lamp style pads. Each round the pads light up in a sequence with ambient tones and you repeat the pattern by tapping them in order.
 
-1. **Open locally**: simply double click `index.html` after cloning this repository.
-2. **GitHub Pages**: enable GitHub Pages on the repository settings and select the `work` branch. Navigate to the provided GitHub Pages URL to see the page online.
+## Playing
+1. **Open locally**: double click `index.html` after cloning the repository.
+2. **GitHub Pages**: enable GitHub Pages on the repository settings and select the branch containing this file. Navigate to the provided URL to play online.
 
-If GitHub Pages is not enabled you may see a 404 error when visiting the page online, so opening the file locally is the quickest option.
+Incorrect input ends the game and displays your score. Tapping the restart button begins a new round.
