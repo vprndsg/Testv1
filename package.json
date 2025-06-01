@@ -1,0 +1,15 @@
+{
+  "name": "fluid-node-universe",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c"
+  },
+  "devDependencies": {
+    "rollup": "^3.29.4",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-commonjs": "^24.1.0",
+    "@rollup/plugin-glsl": "^1.1.0",
+    "rollup-plugin-terser": "^7.0.2"
+  }
+}
