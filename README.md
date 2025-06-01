@@ -1,9 +1,18 @@
-# Psychedelic Simon Says
+# Fluid Node Universe
 
-This project hosts a mobile-optimized "Simon Says" game with a psychedelic twist. The entire screen is a dynamic play board featuring four morphing lava-lamp style pads. Each round the pads light up in a sequence with ambient tones and you repeat the pattern by tapping them in order.
+This project showcases a simple experiment combining a force-directed node layout with a 2‑D fluid simulation. Each node leaves a coloured trail that swirls in a fluid slab behind the 3‑D scene.
 
-## Playing
-1. **Open locally**: double click `index.html` after cloning the repository.
-2. **GitHub Pages**: enable GitHub Pages on the repository settings and select the branch containing this file. Navigate to the provided URL to play online.
+## Building
 
-Incorrect input ends the game and displays your score. Tapping the restart button begins a new round.
+The source is bundled with Rollup. Install the dev dependencies and run the build script:
+
+```bash
+npm install
+npm run build
+```
+
+This produces `dist/main.js` which is referenced by `index.html`. Open that file in a modern browser to see the demo.
+
+The core fluid logic is adapted from Pavel Dobryakov's WebGL fluid solver and wrapped in `src/FluidSolver.js`. Trails are rendered via a custom fragment shader found at `src/shaders/chemDisplay.frag`.
+
+This is only a lightweight prototype meant for experimentation.
