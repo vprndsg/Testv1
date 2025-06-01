@@ -11,7 +11,7 @@ npm install
 npm run build
 ```
 
-This produces `dist/main.js` which is referenced by `index.html`. Open that file in a modern browser to see the demo.
+This produces `dist/main.js`, which is referenced by `index.html`. Open that file in a modern browser to see the demo. The implementation uses [THREE.js](https://threejs.org) for rendering.
 
 The core fluid logic is adapted from Pavel Dobryakov's WebGL fluid solver and wrapped in `src/FluidSolver.js`. Trails are rendered via a custom fragment shader found at `src/shaders/chemDisplay.frag`.
 
