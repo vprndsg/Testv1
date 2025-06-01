@@ -1,18 +1,16 @@
-# Fluid Node Universe
+# 3D Nodes with Fluid Trails
 
-This project showcases a simple experiment combining a force-directed node layout with a 2‑D fluid simulation. Each node leaves a coloured trail that swirls in a fluid slab behind the 3‑D scene.
+This project is a small demo built with **Three.js**. Randomized nodes drift in space and repel each other while leaving behind colorful vapor trails. Trails are drawn on a 2‑D canvas using additive blending and fade slowly over time.
 
-## Building
+## Running
 
-The source is bundled with Rollup. Install the dev dependencies and run the build script:
+Use any static server or Vite during development:
 
 ```bash
 npm install
-npm run build
+npx vite
 ```
 
-This produces `dist/main.js`, which is referenced by `index.html`. Open that file in a modern browser to see the demo. The implementation uses [THREE.js](https://threejs.org) for rendering.
+Open the provided `index.html` and the simulation will start. The source files live in `src/` and are written as ES modules so they work with modern bundlers.
 
-The core fluid logic is adapted from Pavel Dobryakov's WebGL fluid solver and wrapped in `src/FluidSolver.js`. Trails are rendered via a custom fragment shader found at `src/shaders/chemDisplay.frag`.
-
-This is only a lightweight prototype meant for experimentation.
+You can click and drag nodes to fling them around. Their trails update each frame giving a smooth chem‑trail effect.
